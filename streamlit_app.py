@@ -405,6 +405,10 @@ st.write("Use the dropdowns below to explore data for **New Mexico** or specific
 st.info("🔴 Rows highlighted in red represent areas with **Very High Concern/Burden (EJI ≥ 0.76)**.")
 
 selected_parameter = st.selectbox("View EJI data for:", parameter1)
+st.caption(
+    "🔎 **Note:** If a state or county does not appear in the dropdown, it means the CDC dataset for the selected year did not include data for that location."
+)
+
 
 if selected_parameter == "County":
     selected_county = st.selectbox("Select a New Mexico County:", counties)

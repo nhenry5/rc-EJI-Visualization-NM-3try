@@ -102,12 +102,14 @@ county_df.rename(columns=rename_map, inplace=True)
 
 # Determine available metrics based on loaded data (so 2022 can lack CBM/EJI_CBM)
 BASE_METRICS = ["RPL_EJI", "RPL_EBM", "RPL_SVM", "RPL_HVM"]
-OPTIONAL_METRICS = ["RPL_CBM", "RPL_EJI_CBM"]  # added in 2024; maybe absent in 2022
+OPTIONAL_METRICS = ["RPL_CBM", "RPL_EJI_CBM"]  # added in 2024; absent in 2022
 
 metrics = BASE_METRICS.copy()
+
+# Only include optional metrics if the COUNTY file actually has them
+# (County is your primary dataset — so it must match)
 for m in OPTIONAL_METRICS:
-    # only include optional metric if present in BOTH datasets to avoid mismatches later
-    if m in county_df.columns or m in state_df.columns:
+    if m in county_df.columns:
         metrics.append(m)
 
 # Pretty names

@@ -74,14 +74,6 @@ def load_data_for_year(year: str):
     county_df = pd.read_csv(county_path)
     return state_df, county_df
 
-# Let user choose year (affects the main page content)
-selected_year = st.selectbox("Select data year:", AVAILABLE_YEARS, index=0)
-try:
-    state_df, county_df = load_data_for_year(selected_year)
-except Exception as e:
-    st.error(f"Error loading data for {selected_year}: {e}")
-    st.stop()
-
 # ------------------------------
 # Normalize column names (rename mean_* to RPL_*)
 # ------------------------------
@@ -399,6 +391,18 @@ Higher EJI values (closer to 1) indicate *higher cumulative burdens and vulnerab
 """)
 st.write("Use the dropdowns below to explore data for **New Mexico** or specific **counties**.")
 st.info("🔴 Rows highlighted in red represent areas with **Very High Concern/Burden (EJI ≥ 0.76)**.")
+# ------------------------------
+# Move Year Selection Here
+# ------------------------------
+selected_year = st.selectbox("Select data year:", AVAILABLE_YEARS, index=0)
+
+try:
+    state_df, county_df = load_data_for_year(selected_year)
+except Exception as e:
+    st.error(f"Error loading data for {selected_year}: {e}")
+    st.stop()
+
+st.caption("Note: If a state or county does not appear in the dropdown, it means the CDC dataset for the selected year did not include data for that location.")
 
 selected_parameter = st.selectbox("View EJI data for:", parameter1)
 

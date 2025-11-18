@@ -396,6 +396,17 @@ def normalize_county_names(df):
     return df
 
 # ------------------------------
+# Normalize County Names
+# ------------------------------
+def normalize_county_names(df):
+    if "County" in df.columns:
+        df["County"] = df["County"].astype(str).str.strip().str.title()
+        df["County"] = df["County"].apply(
+            lambda x: f"{x} County" if not x.lower().endswith("county") else x
+        )
+    return df
+
+# ------------------------------
 # Load and normalize data
 # ------------------------------
 try:
@@ -417,6 +428,7 @@ for m in OPTIONAL_METRICS:
 
 counties = sorted(county_df["County"].dropna().unique())
 states = sorted(state_df["State"].dropna().unique())
+
 parameter1 = ["New Mexico", "County"]
 
 st.caption("Note: If a state or county does not appear in the dropdown, it means the CDC dataset for the selected year did not include data for that location.")

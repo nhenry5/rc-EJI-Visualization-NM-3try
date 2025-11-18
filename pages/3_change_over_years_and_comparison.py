@@ -141,11 +141,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
 # ------------------------------
 # Beautiful, functional arrows (fixed)
 # ------------------------------
-def weaponized_arrows_of_truth(metrics, y1_values, y2_values, shift=0.15):
-    """
-    Create annotations with arrows showing the difference between Year 1 and Year 2.
-    - shift: horizontal offset for arrow and label (in axis units)
-    """
+def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
     annotations = []
 
     for i, metric in enumerate(metrics):
@@ -159,20 +155,28 @@ def weaponized_arrows_of_truth(metrics, y1_values, y2_values, shift=0.15):
 
         v1 = float(v1)
         v2 = float(v2)
+
         diff = v2 - v1
+        diff_text = f"{diff:+.3f}"
 
-        # Bright colors
-        color = "#ff0000" if diff > 0 else "#00ff00"
+        color = "crimson" if diff > 0 else "lime"
 
-        # Horizontal shift: move arrow head/tail so it doesn't overlap bars
-        x_head = i - shift if diff > 0 else i + shift
-        x_tail = i - shift if diff > 0 else i + shift
-
-        # Arrow annotation
+        # Move label slightly to the right of the bar by adjusting x with "xref='x domain'"
         annotations.append(dict(
-            x=x_head,
+            x=i - 0.15 if diff > 0 else i + 0.15,       # shift right relative to bar position
+            y=(v1 + v2)/2,    # vertically centered along arrow
+            xref="x",          # normal category axis
+            yref="y",
+            text=diff_text,
+            showarrow=False,
+            font=dict(color=color, size=12),
+        ))
+
+        # Actual arrow
+        annotations.append(dict(
+            x=i,
             y=v2,
-            ax=x_tail,
+            ax=i,
             ay=v1,
             xref="x",
             yref="y",
@@ -186,28 +190,8 @@ def weaponized_arrows_of_truth(metrics, y1_values, y2_values, shift=0.15):
             opacity=0.95
         ))
 
-        # Label next to arrow with black outline
-        annotations.append(dict(
-            x=x_head + (0.05 if diff > 0 else -0.05),  # slight horizontal offset for label
-            y=(v1 + v2)/2,                              # vertically centered along arrow
-            xref="x",
-            yref="y",
-            text=f"{diff:+.3f}",                        # shows + or - sign
-            showarrow=False,
-            font=dict(
-                color=color,
-                size=12,
-                # Add black outline using 'stroke' in HTML style
-                family="Arial",
-            ),
-            # Use a little hack with HTML-like tags for outline
-            # Plotly doesn't directly support outline, but we can fake it by using multiple annotations if needed
-            # For now, just add a yshift to make it readable
-            yshift=0
-        ))
-
     return annotations
-
+    
 # ------------------------------
 # Updated plot function (horizontal bars with correctly-directed arrows)
 # ------------------------------

@@ -116,26 +116,43 @@ def get_theme_color():
     return "black"
 
 def display_colored_table_html(df, color_map, pretty_map, title=None):
-    if isinstance(df, pd.Series):
-        df = df.to_frame().T
+    # Rename columns using pretty labels
     df_display = df.rename(columns=pretty_map)
+
     if title:
         st.markdown(f"### {title}")
+
+    # ---- HEADER ----
     header_html = "<tr>"
-    for col in df_display.columns:
-        orig = [k for k,v in pretty_map.items() if v==col]
-        color = color_map.get(orig[0], "#FFFFFF") if orig else "#FFFFFF"
-        text_color = get_contrast_color(color)
-        header_html += f'<th style="background-color:{color};color:{text_color};padding:6px;text-align:center;">{col}</th>'
+    for orig_col in df.columns:
+        pretty_col = pretty_map.get(orig_col, orig_col)
+        bg = color_map.get(orig_col, "#FFFFFF")
+        text_color = get_contrast_color(bg)
+
+        header_html += (
+            f'<th style="background-color:{bg};'
+            f'color:{text_color};padding:6px;text-align:center;">'
+            f'{pretty_col}</th>'
+        )
     header_html += "</tr>"
+
+    # ---- BODY ----
     body_html = ""
-    for _, row in df_display.iterrows():
+    for _, row in df.iterrows():
         body_html += "<tr>"
         for val in row:
-            cell_text = "No Data" if pd.isna(val) else (f"{val:.3f}" if isinstance(val,float) else val)
-            body_html += f"<td style='text-align:center;padding:4px;border:1px solid #ccc'>{cell_text}</td>"
+            cell = "No Data" if pd.isna(val) else (f"{val:.3f}" if isinstance(val, float) else val)
+            body_html += (
+                "<td style='text-align:center;padding:4px;border:1px solid #ccc'>"
+                f"{cell}</td>"
+            )
         body_html += "</tr>"
-    table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
+
+    table_html = (
+        "<table style='border-collapse:collapse;width:100%;border:1px solid black;'>"
+        f"{header_html}{body_html}</table>"
+    )
+
     st.markdown(table_html, unsafe_allow_html=True)
 
 # ------------------------------

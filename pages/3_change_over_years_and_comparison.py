@@ -207,7 +207,10 @@ def plot_year_comparison_with_arrows(y1_values, y2_values, label1, label2, metri
         name=label1,
         marker_color=colors1,
         text=[f"{v:.3f}" if not pd.isna(v) else "No Data" for v in vals1],
-        textposition="outside"
+        textposition="inside",
+        insidetextanchor="middle",
+        cliponaxis=False,
+
     ))
 
     # YEAR 2 (vertical bars)
@@ -217,7 +220,10 @@ def plot_year_comparison_with_arrows(y1_values, y2_values, label1, label2, metri
         name=label2,
         marker_color=colors2,
         text=[f"{v:.3f}" if not pd.isna(v) else "No Data" for v in vals2],
-        textposition="outside"
+        textposition="inside",
+        insidetextanchor="middle",
+        cliponaxis=False,
+
     ))
 
     fig.update_layout(

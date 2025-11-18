@@ -183,9 +183,9 @@ def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
             axref="x",
             ayref="y",
             showarrow=True,
-            arrowhead=3,
-            arrowsize=1.2,
-            arrowwidth=2,
+            arrowhead=5,
+            arrowsize=2,
+            arrowwidth=3,
             arrowcolor=color,
             opacity=0.95
         ))

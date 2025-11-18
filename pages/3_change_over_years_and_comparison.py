@@ -209,7 +209,6 @@ def plot_year_comparison_with_arrows(y1_values, y2_values, label1, label2, metri
         text=[f"{location1_name}<br>{label1}<br>{v:.3f}" if not pd.isna(v) else "No Data" for v in vals1],
         textposition="inside",
         insidetextanchor="middle",
-        cliponaxis=False,
 
     ))
 
@@ -222,7 +221,6 @@ def plot_year_comparison_with_arrows(y1_values, y2_values, label1, label2, metri
         text=[f"{location1_name}<br>{label2}<br>{v:.3f}" if not pd.isna(v) else "No Data" for v in vals2],
         textposition="inside",
         insidetextanchor="middle",
-        cliponaxis=False,
 
     ))
 

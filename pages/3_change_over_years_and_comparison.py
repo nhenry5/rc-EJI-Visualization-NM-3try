@@ -139,7 +139,57 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
     st.markdown(table_html, unsafe_allow_html=True)
 
 # ------------------------------
-# New Plot Function with Green/Red Difference Arrows
+# Beautiful, functional arrows
+# ------------------------------
+def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
+    annotations = []
+
+    for i, metric in enumerate(metrics):
+        v1 = y1_values[metric]
+        v2 = y2_values[metric]
+
+        # Skip missing
+        if pd.isna(v1) or pd.isna(v2):
+            continue
+
+        v1 = float(v1)
+        v2 = float(v2)
+
+        # Arrow direction
+        if v2 > v1:
+            start_x = v1
+            end_x = v2
+            color = "red"     # worse
+        else:
+            start_x = v1
+            end_x = v2
+            color = "green"   # improved
+
+        annotations.append(
+            dict(
+                x=start_x,
+                y=i,             # exact metric row position
+                ax=end_x,
+                ay=i,
+                xref="x",
+                yref="y",
+                axref="x",
+                ayref="y",
+                showarrow=True,
+                arrowhead=3,
+                arrowsize=1.2,
+                arrowcolor=color,
+                arrowwidth=2,
+                standoff=2,
+                opacity=0.95
+            )
+        )
+
+    return annotations
+
+
+# ------------------------------
+# Updated plot function
 # ------------------------------
 def plot_year_comparison_with_arrows(y1_values, y2_values, label1, label2, metrics):
     vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in y1_values])
@@ -148,94 +198,36 @@ def plot_year_comparison_with_arrows(y1_values, y2_values, label1, label2, metri
     colors1 = [dataset_year1_rainbows[m] for m in metrics]
     colors2 = [dataset_year2_rainbows[m] for m in metrics]
 
-    # Prepare arrows and labels
-    diffs = vals2 - vals1
-    weaponized_arrows_of_truth = []
-    for i, (v1, v2, diff) in enumerate(zip(vals1, vals2, diffs)):
-        if np.isnan(v1) or np.isnan(v2) or diff==0:
-            continue
-        # Arrow points from smaller to larger
-        y_base = v1 if diff > 0 else v2
-        color = "red" if diff>0 else "green"
-        text = f"{abs(diff):.3f}"
-        weaponized_arrows_of_truth.append(dict(
-            x=metric_names[i], y=y_base,
-            ax=0, ay=0,
-            xref="x", yref="y",
-            axref="x", ayref="y",
-            showarrow=True,
-            arrowhead=3,
-            arrowsize=1.5,
-            arrowwidth=2,
-            arrowcolor=color,
-            text=text,
-            font=dict(color=color, size=12),
-            yshift=5
-        ))
-
     fig = go.Figure()
+
     fig.add_trace(go.Bar(
-        x=metric_names, y=vals1, name=label1, marker_color=colors1,
+        x=vals1, y=list(range(len(metrics))), orientation="h",
+        name=label1, marker_color=colors1,
         text=[f"{v:.3f}" if not np.isnan(v) else "No Data" for v in vals1],
-        textposition="auto"
+        textposition="outside"
     ))
+
     fig.add_trace(go.Bar(
-        x=metric_names, y=vals2, name=label2, marker_color=colors2,
+        x=vals2, y=list(range(len(metrics))), orientation="h",
+        name=label2, marker_color=colors2,
         text=[f"{v:.3f}" if not np.isnan(v) else "No Data" for v in vals2],
-        textposition="auto"
+        textposition="outside"
     ))
 
     fig.update_layout(
+        yaxis=dict(
+            tickmode="array",
+            tickvals=list(range(len(metrics))),
+            ticktext=metric_names
+        ),
+        xaxis=dict(range=[0, 1]),
         barmode="group",
         title=f"EJI Metrics Comparison: {label1} vs {label2}",
-        yaxis=dict(title="Percentile Rank Value", range=[0, 1]),
-        xaxis_title="EJI Metric",
-        legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
-        annotations=weaponized_arrows_of_truth
+        annotations=weaponized_arrows_of_truth(metrics, y1_values, y2_values),
+        height=500
     )
-    st.plotly_chart(fig, width='stretch')
 
-def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
-    annotations = []
-
-    for i, metric in enumerate(metrics):
-        y_pos = i
-
-        v1 = float(y1_values[metric]) if not pd.isna(y1_values[metric]) else None
-        v2 = float(y2_values[metric]) if not pd.isna(y2_values[metric]) else None
-
-        if v1 is None or v2 is None:
-            continue
-
-        if v2 > v1:
-            start_x = v1
-            end_x = v2
-            arrow_color = "green"
-        else:
-            start_x = v1
-            end_x = v2
-            arrow_color = "red"
-
-        annotations.append(
-            dict(
-                x=start_x,
-                y=y_pos,
-                ax=end_x,
-                ay=y_pos,
-                xref="x",
-                yref="y",
-                axref="x",
-                ayref="y",
-                showarrow=True,
-                arrowhead=3,
-                arrowsize=1.2,
-                arrowcolor=arrow_color,
-                opacity=0.9,
-                standoff=2,
-            )
-        )
-
-    return annotations
+    st.plotly_chart(fig, use_container_width=True)
 
 # ------------------------------
 # Main App Logic

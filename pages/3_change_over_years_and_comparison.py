@@ -144,7 +144,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
 def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
     annotations = []
 
-    for metric in metrics:
+    for i, metric in enumerate(metrics):
         metric_name = pretty[metric]
 
         v1 = y1_values.get(metric, np.nan)
@@ -156,18 +156,28 @@ def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
         v1 = float(v1)
         v2 = float(v2)
 
-        # Compute signed difference (Year2 - Year1)
         diff = v2 - v1
-        diff_text = f"{diff:+.3f}"  # + sign for positive, - for negative
+        diff_text = f"{diff:+.3f}"
 
         color = "red" if diff > 0 else "green"
 
-        # Vertical arrow from Year1 → Year2
+        # Move label slightly to the right of the bar by adjusting x with "xref='x domain'"
         annotations.append(dict(
-            x=metric_name,
-            y=v2,          # arrow head = Year2
-            ax=metric_name,
-            ay=v1,          # arrow tail = Year1
+            x=i + 0.15,       # shift right relative to bar position
+            y=(v1 + v2)/2,    # vertically centered along arrow
+            xref="x",          # normal category axis
+            yref="y",
+            text=diff_text,
+            showarrow=False,
+            font=dict(color=color, size=12),
+        ))
+
+        # Actual arrow
+        annotations.append(dict(
+            x=i,
+            y=v2,
+            ax=i,
+            ay=v1,
             xref="x",
             yref="y",
             axref="x",
@@ -177,12 +187,7 @@ def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
             arrowsize=1.2,
             arrowwidth=2,
             arrowcolor=color,
-            opacity=0.95,
-            # Position label to the right of arrow
-            text=diff_text,
-            font=dict(color=color, size=12),
-            xshift=15,    # move label to the right side
-            yshift=0       # centered vertically on arrow
+            opacity=0.95
         ))
 
     return annotations

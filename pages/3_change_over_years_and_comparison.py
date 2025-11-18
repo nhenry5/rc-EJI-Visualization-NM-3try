@@ -142,45 +142,36 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
 # Beautiful, functional arrows (fixed)
 # ------------------------------
 def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
-    """
-    Returns Plotly annotation dicts that draw arrows from Year1 -> Year2
-    for each metric. Uses metric name strings as the y anchor so arrows sit
-    on the same categorical row as the bars.
-    """
     annotations = []
+
     for metric in metrics:
-        # metric_name (string) used as categorical y anchor
         metric_name = pretty[metric]
 
         v1 = y1_values.get(metric, np.nan)
         v2 = y2_values.get(metric, np.nan)
 
-        # skip missing or identical
         if pd.isna(v1) or pd.isna(v2) or float(v1) == float(v2):
             continue
 
         v1 = float(v1)
         v2 = float(v2)
 
-        # HEAD at Year2, TAIL at Year1 -> i.e. arrow from v1 -> v2
-        head_x = v2
-        tail_x = v1
+        # Vertical chart:
+        # x = category (metric name)
+        # y = numeric value
+        head_y = v2   # arrow head = Year 2
+        tail_y = v1   # arrow tail = Year 1
 
-        # color logic: red if Year2 worse (higher than Year1), green if improved
         color = "red" if v2 > v1 else "green"
-
-        # show label near the arrow head with absolute diff
         diff_text = f"{abs(v2 - v1):.3f}"
 
         annotations.append(dict(
-            # head (where the arrow points to)
-            x=head_x,
-            y=metric_name,
+            x=metric_name,
+            y=head_y,         # arrow head
             xref="x",
             yref="y",
-            # tail (where arrow starts)
-            ax=tail_x,
-            ay=metric_name,
+            ax=metric_name,
+            ay=tail_y,        # arrow tail
             axref="x",
             ayref="y",
             showarrow=True,
@@ -189,74 +180,56 @@ def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
             arrowwidth=2,
             arrowcolor=color,
             opacity=0.95,
-            # put the diff text a little above the head
             text=diff_text,
             font=dict(color=color, size=11),
-            # offset the text slightly so it doesn't overlap the bar head
-            yshift=8
+            yshift=10
         ))
 
     return annotations
-
 
 # ------------------------------
 # Updated plot function (horizontal bars with correctly-directed arrows)
 # ------------------------------
 def plot_year_comparison_with_arrows(y1_values, y2_values, label1, label2, metrics):
-    """
-    Horizontal grouped bars: Year1 (color set1) and Year2 (color set2).
-    Arrows point from Year1 value to Year2 value for each metric; red = worse, green = better.
-    """
-    # numeric arrays for bar lengths (keep NaN where missing)
     vals1 = [np.nan if pd.isna(y1_values.get(m)) else float(y1_values.get(m)) for m in metrics]
     vals2 = [np.nan if pd.isna(y2_values.get(m)) else float(y2_values.get(m)) for m in metrics]
 
     metric_names = [pretty[m] for m in metrics]
-    colors1 = [dataset_year1_rainbows.get(m, "#888888") for m in metrics]
-    colors2 = [dataset_year2_rainbows.get(m, "#cccccc") for m in metrics]
+    colors1 = [dataset_year1_rainbows[m] for m in metrics]
+    colors2 = [dataset_year2_rainbows[m] for m in metrics]
 
     fig = go.Figure()
 
-    # Year 1 bars (horizontal) — use metric_names (strings) as y so axis is categorical
+    # YEAR 1 (vertical bars)
     fig.add_trace(go.Bar(
-        x=vals1,
-        y=metric_names,
-        orientation="h",
+        x=metric_names,
+        y=vals1,
         name=label1,
         marker_color=colors1,
         text=[f"{v:.3f}" if not pd.isna(v) else "No Data" for v in vals1],
-        textposition="outside",
-        insidetextanchor="middle"
+        textposition="outside"
     ))
 
-    # Year 2 bars
+    # YEAR 2 (vertical bars)
     fig.add_trace(go.Bar(
-        x=vals2,
-        y=metric_names,
-        orientation="h",
+        x=metric_names,
+        y=vals2,
         name=label2,
         marker_color=colors2,
         text=[f"{v:.3f}" if not pd.isna(v) else "No Data" for v in vals2],
-        textposition="outside",
-        insidetextanchor="middle"
+        textposition="outside"
     ))
-
-    # Annotations (arrows) from Year1 -> Year2
-    annotations = weaponized_arrows_of_truth(metrics, y1_values, y2_values)
 
     fig.update_layout(
         barmode="group",
-        title=f"EJI Metrics Comparison: {label1} → {label2}",
-        xaxis=dict(title="Percentile Rank Value", range=[0, 1]),
-        yaxis=dict(autorange="reversed"),  # keeps first metric on top (optional)
-        legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
-        annotations=annotations,
-        height=500
+        title=f"EJI Metrics Comparison: {label1} vs {label2}",
+        xaxis=dict(title="Metric"),
+        yaxis=dict(range=[0,1], title="Percentile Rank"),
+        annotations=weaponized_arrows_of_truth(metrics, y1_values, y2_values),
+        height=550
     )
 
-    # use Streamlit's new width param per warning
     st.plotly_chart(fig, width="stretch")
-
 
 # ------------------------------
 # Main App Logic

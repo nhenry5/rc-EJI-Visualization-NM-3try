@@ -155,17 +155,29 @@ def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
 
         v1 = float(v1)
         v2 = float(v2)
+
         diff = v2 - v1
+        diff_text = f"{diff:+.3f}"
 
-        # Neon red / green colors
-        color = "#00ff00ff" if diff < 0 else "#ff0000ff"
+        color = "red" if diff > 0 else "green"
 
-        # Arrow head/tail
+        # Move label slightly to the right of the bar by adjusting x with "xref='x domain'"
         annotations.append(dict(
-            x=metric_name,
-            y=v2,             # arrow head = Year 2
-            ax=metric_name,
-            ay=v1,             # arrow tail = Year 1
+            x=i + 0.15,       # shift right relative to bar position
+            y=(v1 + v2)/2,    # vertically centered along arrow
+            xref="x",          # normal category axis
+            yref="y",
+            text=diff_text,
+            showarrow=False,
+            font=dict(color=color, size=12),
+        ))
+
+        # Actual arrow
+        annotations.append(dict(
+            x=i,
+            y=v2,
+            ax=i,
+            ay=v1,
             xref="x",
             yref="y",
             axref="x",
@@ -175,29 +187,7 @@ def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
             arrowsize=1.2,
             arrowwidth=2,
             arrowcolor=color,
-            opacity=0.95,
-        ))
-
-        # Label next to arrow, with black outline effect
-        diff_text = f"{diff:+.3f}"  # shows + or - sign
-        # Fake outline by adding black text behind colored text
-        annotations.append(dict(
-            x=i + 0.15,
-            y=(v1 + v2)/2,
-            xref="x",
-            yref="y",
-            showarrow=False,
-            text=diff_text,
-            font=dict(color="black", size=14),
-        ))
-        annotations.append(dict(
-            x=i + 0.15,
-            y=(v1 + v2)/2,
-            xref="x",
-            yref="y",
-            showarrow=False,
-            text=diff_text,
-            font=dict(color=color, size=12),
+            opacity=0.95
         ))
 
     return annotations

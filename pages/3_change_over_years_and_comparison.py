@@ -151,7 +151,7 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
 # ------------------------------
 # Plot Function with Discrepancy
 # ------------------------------
-def plot_year_single(y1_values, y2_values, label1, label2):
+def plot_year_single(y1_values, y2_values, label1, label2, metrics):
     vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in y1_values])
     vals2 = np.array([np.nan if pd.isna(v) else float(v) for v in y2_values])
     metric_names = [pretty[m] for m in metrics]
@@ -202,44 +202,63 @@ other_year_options = [y for y in AVAILABLE_YEARS if y != baseline_year]
 other_year = st.selectbox("Select comparison year:", other_year_options, index=0)
 
 # ------------------------------
-# Load Data
+# Load Baseline Year Data
 # ------------------------------
 try:
-    state_df, county_df = load_data_for_year(baseline_year)
+    state_df1, county_df1 = load_data_for_year(baseline_year)
 except Exception as e:
     st.error(f"Error loading data for {baseline_year}: {e}")
     st.stop()
-state_df.rename(columns=rename_map, inplace=True)
-county_df.rename(columns=rename_map, inplace=True)
+
+state_df1.rename(columns=rename_map, inplace=True)
+county_df1.rename(columns=rename_map, inplace=True)
+
 metrics = BASE_METRICS.copy()
 for m in OPTIONAL_METRICS:
-    if m in county_df.columns:
+    if m in county_df1.columns:
         metrics.append(m)
-counties = sorted(county_df["County"].dropna().unique())
-states = sorted(state_df["State"].dropna().unique())
+
+counties = sorted(county_df1["County"].dropna().unique())
+states = sorted(state_df1["State"].dropna().unique())
 
 selected_parameter = st.selectbox("View EJI data for:", ["New Mexico", "County"])
 
+# ------------------------------
+# Handle County or State
+# ------------------------------
 if selected_parameter=="County":
     selected_county = st.selectbox("Select a New Mexico County:", counties)
-    subset1 = county_df[county_df["County"]==selected_county]
-    subset2, _ = load_data_for_year(other_year)[1].query(f'County == "{selected_county}"'), _
+    subset1 = county_df1[county_df1["County"]==selected_county]
+
+    county_df2 = load_data_for_year(other_year)[1]
+    county_df2.rename(columns=rename_map, inplace=True)
+    subset2 = county_df2[county_df2["County"]==selected_county]
+
+    # Only keep metrics present in both datasets
+    metrics_in_both = [m for m in metrics if m in subset1.columns and m in subset2.columns]
+
     if subset1.empty or subset2.empty:
         st.warning(f"No data for {selected_county} in one of the years")
     else:
-        y1_values = subset1[metrics].iloc[0]
-        y2_values = subset2[metrics].iloc[0]
-        plot_year_single(y1_values, y2_values, baseline_year, other_year)
+        y1_values = subset1[metrics_in_both].iloc[0]
+        y2_values = subset2[metrics_in_both].iloc[0]
+        plot_year_single(y1_values, y2_values, baseline_year, other_year, metrics_in_both)
+
 else:
-    nm_row1 = state_df[state_df["State"].str.strip().str.lower()=="new mexico"]
-    nm_row2 = load_data_for_year(other_year)[0]
-    nm_row2 = nm_row2[nm_row2["State"].str.strip().str.lower()=="new mexico"]
+    nm_row1 = state_df1[state_df1["State"].str.strip().str.lower()=="new mexico"]
+    state_df2 = load_data_for_year(other_year)[0]
+    state_df2.rename(columns=rename_map, inplace=True)
+    nm_row2 = state_df2[state_df2["State"].str.strip().str.lower()=="new mexico"]
+
+    # Only keep metrics present in both datasets
+    metrics_in_both = [m for m in metrics if m in nm_row1.columns and m in nm_row2.columns]
+
     if nm_row1.empty or nm_row2.empty:
         st.warning("No New Mexico data found")
     else:
-        y1_values = nm_row1[metrics].iloc[0]
-        y2_values = nm_row2[metrics].iloc[0]
-        plot_year_single(y1_values, y2_values, baseline_year, other_year)
+        y1_values = nm_row1[metrics_in_both].iloc[0]
+        y2_values = nm_row2[metrics_in_both].iloc[0]
+        plot_year_single(y1_values, y2_values, baseline_year, other_year, metrics_in_both)
 
 st.divider()
 st.caption("Data Source: CDC Environmental Justice Index | Visualization by Riley Cochrell")

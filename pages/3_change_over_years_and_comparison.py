@@ -190,7 +190,7 @@ def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
 # ------------------------------
 # Updated plot function (horizontal bars with correctly-directed arrows)
 # ------------------------------
-def plot_year_comparison_with_arrows(y1_values, y2_values, label1, label2, metrics):
+def plot_year_comparison_with_arrows(y1_values, y2_values, label1, label2, metrics, location1_name):
     vals1 = [np.nan if pd.isna(y1_values.get(m)) else float(y1_values.get(m)) for m in metrics]
     vals2 = [np.nan if pd.isna(y2_values.get(m)) else float(y2_values.get(m)) for m in metrics]
 
@@ -206,7 +206,7 @@ def plot_year_comparison_with_arrows(y1_values, y2_values, label1, label2, metri
         y=vals1,
         name=label1,
         marker_color=colors1,
-        text=[f"{label1}<br>{baseline_year}<br>{v:.3f}" if not pd.isna(v) else "No Data" for v in vals1],
+        text=[f"{location1_name}<br>{label1}<br>{v:.3f}" if not pd.isna(v) else "No Data" for v in vals1],
         textposition="inside",
         insidetextanchor="middle",
         cliponaxis=False,
@@ -219,7 +219,7 @@ def plot_year_comparison_with_arrows(y1_values, y2_values, label1, label2, metri
         y=vals2,
         name=label2,
         marker_color=colors2,
-        text=[f"{label2}<br>{other_year}<br>{v:.3f}" if not pd.isna(v) else "No Data" for v in vals2],
+        text=[f"{location1_name}<br>{label2}<br>{v:.3f}" if not pd.isna(v) else "No Data" for v in vals2],
         textposition="inside",
         insidetextanchor="middle",
         cliponaxis=False,
@@ -284,7 +284,8 @@ if selected_parameter=="County":
     else:
         y1_values = subset1[metrics].iloc[0]
         y2_values = subset2[metrics].iloc[0]
-        plot_year_comparison_with_arrows(y1_values, y2_values, baseline_year, other_year, metrics)
+        location1_name = selected_county
+        plot_year_comparison_with_arrows(y1_values, y2_values, baseline_year, other_year, metrics, location1_name)
 else:
     nm_row1 = state_df1[state_df1["State"].str.strip().str.lower()=="new mexico"]
     nm_row2 = state_df2[state_df2["State"].str.strip().str.lower()=="new mexico"]
@@ -293,7 +294,8 @@ else:
     else:
         y1_values = nm_row1[metrics].iloc[0]
         y2_values = nm_row2[metrics].iloc[0]
-        plot_year_comparison_with_arrows(y1_values, y2_values, baseline_year, other_year, metrics)
+        location1_name = "New Mexico"
+        plot_year_comparison_with_arrows(y1_values, y2_values, baseline_year, other_year, metrics, location1_name)
 
 st.divider()
 st.caption("Data Source: CDC Environmental Justice Index | Visualization by Riley Cochrell")

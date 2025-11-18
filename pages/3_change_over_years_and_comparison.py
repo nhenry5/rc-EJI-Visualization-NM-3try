@@ -161,6 +161,16 @@ def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
 
         color = "red" if diff > 0 else "lime"
 
+        annotations.append(dict(
+            x=i - 0.1 - 0.15 if diff > 0 else i + 0.1 + 0.15,       # shift right relative to bar position
+            y=(v1 + v2)/2,    # vertically centered along arrow
+            xref="x",          # normal category axis
+            yref="y",
+            text=diff_text,
+            showarrow=False,
+            font=dict(color="black", size=13),
+        ))
+
         # Move label slightly to the right of the bar by adjusting x with "xref='x domain'"
         annotations.append(dict(
             x=i - 0.1 - 0.15 if diff > 0 else i + 0.1 + 0.15,       # shift right relative to bar position

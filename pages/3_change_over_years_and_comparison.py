@@ -302,11 +302,18 @@ if selected_parameter=="County":
         table_change = pd.DataFrame({
             baseline_year: y1_values,
             other_year: y2_values
-        }).T
+        })
+        table_change.index.name = f'{location1_name} Metrics"
         table_change = table_change[metrics]  # ensure order matches chart
+        table_df_reset = table_df.reset_index()
+        table_df_reset.rename(columns={'index': f'{location1_name} Metrics'}, inplace=True)
+        
         st.markdown(f"### {location1_name} – Year Comparison Table")
-        display_colored_table_html(table_change, color_map=dataset_year2_rainbows, pretty_map=pretty)
-       
+        display_colored_table_html(
+            table_df_reset,
+            color_map=dataset_year1_rainbows,  # use year1 colors for header
+            pretty_map={**{'index': f'{location1_name} Metrics'}, **pretty}  # include first column in pretty map
+        )
         plot_year_comparison_with_arrows(y1_values, y2_values, baseline_year, other_year, metrics, location1_name)
 else:
     nm_row1 = state_df1[state_df1["State"].str.strip().str.lower()=="new mexico"]
@@ -321,11 +328,18 @@ else:
         table_change = pd.DataFrame({
             baseline_year: y1_values,
             other_year: y2_values
-        }).T
+        })
+        table_change.index.name = f'{location1_name} Metrics"
         table_change = table_change[metrics]
-        st.markdown(f"### {location1_name} – Year Comparison Table")
-        display_colored_table_html(table_change, color_map=dataset_year2_rainbows, pretty_map=pretty)
+        table_df_reset = table_df.reset_index()
+        table_df_reset.rename(columns={'index': f'{location1_name} Metrics'}, inplace=True)
         
+        st.markdown(f"### {location1_name} – Year Comparison Table")
+        display_colored_table_html(
+            table_df_reset,
+            color_map=dataset_year1_rainbows,  # use year1 colors for header
+            pretty_map={**{'index': f'{location1_name} Metrics'}, **pretty}  # include first column in pretty map
+        )
         plot_year_comparison_with_arrows(y1_values, y2_values, baseline_year, other_year, metrics, location1_name)
 
 st.divider()

@@ -298,7 +298,12 @@ if selected_parameter=="County":
         y1_values = subset1[metrics].iloc[0]
         y2_values = subset2[metrics].iloc[0]
         location1_name = selected_county
-        
+        # ---------------- Table ----------------
+        table_df = pd.DataFrame({baseline_year: y1_values, other_year: y2_values})
+        table_df = table_df[metrics]  # ensure order matches chart
+        st.markdown(f"### {location1_name} – Year Comparison Table")
+        display_colored_table_html(table_df, color_map=dataset_year2_rainbows, pretty_map=pretty)
+       
         plot_year_comparison_with_arrows(y1_values, y2_values, baseline_year, other_year, metrics, location1_name)
 else:
     nm_row1 = state_df1[state_df1["State"].str.strip().str.lower()=="new mexico"]
@@ -309,6 +314,12 @@ else:
         y1_values = nm_row1[metrics].iloc[0]
         y2_values = nm_row2[metrics].iloc[0]
         location1_name = "New Mexico"
+        # ---------------- Table ----------------
+        table_df = pd.DataFrame({baseline_year: y1_values, other_year: y2_values})
+        table_df = table_df[metrics]
+        st.markdown(f"### {location1_name} – Year Comparison Table")
+        display_colored_table_html(table_df, color_map=dataset_year2_rainbows, pretty_map=pretty)
+        
         plot_year_comparison_with_arrows(y1_values, y2_values, baseline_year, other_year, metrics, location1_name)
 
 st.divider()

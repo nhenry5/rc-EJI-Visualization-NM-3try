@@ -305,12 +305,12 @@ if selected_parameter=="County":
         })
         table_change.index.name = f'{location1_name} Metrics"
         table_change = table_change[metrics]  # ensure order matches chart
-        table_df_reset = table_df.reset_index()
-        table_df_reset.rename(columns={'index': f'{location1_name} Metrics'}, inplace=True)
+        table_change_reset = table_change.reset_index()
+        table_change_reset.rename(columns={'index': f'{location1_name} Metrics'}, inplace=True)
         
         st.markdown(f"### {location1_name} – Year Comparison Table")
         display_colored_table_html(
-            table_df_reset,
+            table_change_reset,
             color_map=dataset_year1_rainbows,  # use year1 colors for header
             pretty_map={**{'index': f'{location1_name} Metrics'}, **pretty}  # include first column in pretty map
         )
@@ -331,12 +331,12 @@ else:
         })
         table_change.index.name = f'{location1_name} Metrics"
         table_change = table_change[metrics]
-        table_df_reset = table_df.reset_index()
-        table_df_reset.rename(columns={'index': f'{location1_name} Metrics'}, inplace=True)
+        table_change_reset = table_change.reset_index()
+        table_change_reset.rename(columns={'index': f'{location1_name} Metrics'}, inplace=True)
         
         st.markdown(f"### {location1_name} – Year Comparison Table")
         display_colored_table_html(
-            table_df_reset,
+            table_change_reset,
             color_map=dataset_year1_rainbows,  # use year1 colors for header
             pretty_map={**{'index': f'{location1_name} Metrics'}, **pretty}  # include first column in pretty map
         )

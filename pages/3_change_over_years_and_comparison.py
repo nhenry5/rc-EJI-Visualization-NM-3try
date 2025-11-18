@@ -139,101 +139,124 @@ def display_colored_table_html(df, color_map, pretty_map, title=None):
     st.markdown(table_html, unsafe_allow_html=True)
 
 # ------------------------------
-# Beautiful, functional arrows
+# Beautiful, functional arrows (fixed)
 # ------------------------------
 def weaponized_arrows_of_truth(metrics, y1_values, y2_values):
+    """
+    Returns Plotly annotation dicts that draw arrows from Year1 -> Year2
+    for each metric. Uses metric name strings as the y anchor so arrows sit
+    on the same categorical row as the bars.
+    """
     annotations = []
+    for metric in metrics:
+        # metric_name (string) used as categorical y anchor
+        metric_name = pretty[metric]
 
-    for i, metric in enumerate(metrics):
-        v1 = y1_values[metric]
-        v2 = y2_values[metric]
+        v1 = y1_values.get(metric, np.nan)
+        v2 = y2_values.get(metric, np.nan)
 
-        if pd.isna(v1) or pd.isna(v2):
+        # skip missing or identical
+        if pd.isna(v1) or pd.isna(v2) or float(v1) == float(v2):
             continue
 
         v1 = float(v1)
         v2 = float(v2)
 
-        # Arrow ALWAYS points from Year 1 → Year 2
-        start_x = v1
-        end_x = v2
-        y_pos = i
+        # HEAD at Year2, TAIL at Year1 -> i.e. arrow from v1 -> v2
+        head_x = v2
+        tail_x = v1
 
-        # Color logic (unchanged)
+        # color logic: red if Year2 worse (higher than Year1), green if improved
         color = "red" if v2 > v1 else "green"
 
-        annotations.append(
-            dict(
-                x=start_x,
-                y=y_pos,
-                ax=end_x,
-                ay=y_pos,
-                xref="x",
-                yref="y",
-                axref="x",
-                ayref="y",
-                showarrow=True,
-                arrowhead=3,
-                arrowsize=1.2,
-                arrowcolor=color,
-                arrowwidth=2,
-                opacity=0.95,
-            )
-        )
+        # show label near the arrow head with absolute diff
+        diff_text = f"{abs(v2 - v1):.3f}"
+
+        annotations.append(dict(
+            # head (where the arrow points to)
+            x=head_x,
+            y=metric_name,
+            xref="x",
+            yref="y",
+            # tail (where arrow starts)
+            ax=tail_x,
+            ay=metric_name,
+            axref="x",
+            ayref="y",
+            showarrow=True,
+            arrowhead=3,
+            arrowsize=1.2,
+            arrowwidth=2,
+            arrowcolor=color,
+            opacity=0.95,
+            # put the diff text a little above the head
+            text=diff_text,
+            font=dict(color=color, size=11),
+            # offset the text slightly so it doesn't overlap the bar head
+            yshift=8
+        ))
 
     return annotations
 
 
 # ------------------------------
-# Updated plot function (horizontal bars with arrows)
+# Updated plot function (horizontal bars with correctly-directed arrows)
 # ------------------------------
 def plot_year_comparison_with_arrows(y1_values, y2_values, label1, label2, metrics):
-    vals1 = np.array([np.nan if pd.isna(v) else float(v) for v in y1_values])
-    vals2 = np.array([np.nan if pd.isna(v) else float(v) for v in y2_values])
+    """
+    Horizontal grouped bars: Year1 (color set1) and Year2 (color set2).
+    Arrows point from Year1 value to Year2 value for each metric; red = worse, green = better.
+    """
+    # numeric arrays for bar lengths (keep NaN where missing)
+    vals1 = [np.nan if pd.isna(y1_values.get(m)) else float(y1_values.get(m)) for m in metrics]
+    vals2 = [np.nan if pd.isna(y2_values.get(m)) else float(y2_values.get(m)) for m in metrics]
 
     metric_names = [pretty[m] for m in metrics]
-    colors1 = [dataset_year1_rainbows[m] for m in metrics]
-    colors2 = [dataset_year2_rainbows[m] for m in metrics]
+    colors1 = [dataset_year1_rainbows.get(m, "#888888") for m in metrics]
+    colors2 = [dataset_year2_rainbows.get(m, "#cccccc") for m in metrics]
 
     fig = go.Figure()
 
-    # Bars
+    # Year 1 bars (horizontal) — use metric_names (strings) as y so axis is categorical
     fig.add_trace(go.Bar(
         x=vals1,
-        y=list(range(len(metrics))),
+        y=metric_names,
         orientation="h",
         name=label1,
         marker_color=colors1,
-        text=[f"{v:.3f}" if not np.isnan(v) else "No Data" for v in vals1],
-        textposition="outside"
+        text=[f"{v:.3f}" if not pd.isna(v) else "No Data" for v in vals1],
+        textposition="outside",
+        insidetextanchor="middle"
     ))
 
+    # Year 2 bars
     fig.add_trace(go.Bar(
         x=vals2,
-        y=list(range(len(metrics))),
+        y=metric_names,
         orientation="h",
         name=label2,
         marker_color=colors2,
-        text=[f"{v:.3f}" if not np.isnan(v) else "No Data" for v in vals2],
-        textposition="outside"
+        text=[f"{v:.3f}" if not pd.isna(v) else "No Data" for v in vals2],
+        textposition="outside",
+        insidetextanchor="middle"
     ))
 
-    # Layout
+    # Annotations (arrows) from Year1 -> Year2
+    annotations = weaponized_arrows_of_truth(metrics, y1_values, y2_values)
+
     fig.update_layout(
-        yaxis=dict(
-            tickmode="array",
-            tickvals=list(range(len(metrics))),
-            ticktext=metric_names,
-            type="category"   # ← THIS FIXES THE ENTIRE ISSUE
-        ),
-        xaxis=dict(range=[0, 1]),
         barmode="group",
-        title=f"EJI Metrics Comparison: {label1} vs {label2}",
-        annotations=weaponized_arrows_of_truth(metrics, y1_values, y2_values),
+        title=f"EJI Metrics Comparison: {label1} → {label2}",
+        xaxis=dict(title="Percentile Rank Value", range=[0, 1]),
+        yaxis=dict(autorange="reversed"),  # keeps first metric on top (optional)
+        legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
+        annotations=annotations,
         height=500
     )
 
+    # use Streamlit's new width param per warning
     st.plotly_chart(fig, width="stretch")
+
 
 # ------------------------------
 # Main App Logic

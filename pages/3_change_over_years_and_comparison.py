@@ -300,20 +300,21 @@ if selected_parameter=="County":
         location1_name = selected_county
         # ---------------- Table ----------------
         table_change = pd.DataFrame({
-            baseline_year: y1_values,
-            other_year: y2_values
-        })
-        table_change.index.name = f'{location1_name} Metrics"
-        table_change = table_change[metrics]  # ensure order matches chart
-        table_change_reset = table_change.reset_index()
-        table_change_reset.rename(columns={'index': f'{location1_name} Metrics'}, inplace=True)
+            baseline_year: y1_values[metrics].values,
+            other_year: y2_values[metrics].values
+        }, index=[metrics]).T  # metrics as columns
+        
+        # Reset index to have years as rows
+        table_df_reset = table_change.reset_index()
+        table_df_reset.rename(columns={'index': f'{location1_name}'}, inplace=True)
         
         st.markdown(f"### {location1_name} – Year Comparison Table")
         display_colored_table_html(
-            table_change_reset,
-            color_map=dataset_year1_rainbows,  # use year1 colors for header
-            pretty_map={**{'index': f'{location1_name} Metrics'}, **pretty}  # include first column in pretty map
+            table_df_reset,
+            color_map=dataset_year1_rainbows,  # use year1 colors for metric headers
+            pretty_map={**{f'{location1_name}': f'{location1_name}'}, **pretty}  # include first column in pretty map
         )
+
         plot_year_comparison_with_arrows(y1_values, y2_values, baseline_year, other_year, metrics, location1_name)
 else:
     nm_row1 = state_df1[state_df1["State"].str.strip().str.lower()=="new mexico"]
@@ -326,20 +327,21 @@ else:
         location1_name = "New Mexico"
         # ---------------- Table ----------------
         table_change = pd.DataFrame({
-            baseline_year: y1_values,
-            other_year: y2_values
-        })
-        table_change.index.name = f'{location1_name} Metrics"
-        table_change = table_change[metrics]
-        table_change_reset = table_change.reset_index()
-        table_change_reset.rename(columns={'index': f'{location1_name} Metrics'}, inplace=True)
+            baseline_year: y1_values[metrics].values,
+            other_year: y2_values[metrics].values
+        }, index=[metrics]).T  # metrics as columns
+        
+        # Reset index to have years as rows
+        table_df_reset = table_change.reset_index()
+        table_df_reset.rename(columns={'index': f'{location1_name}'}, inplace=True)
         
         st.markdown(f"### {location1_name} – Year Comparison Table")
         display_colored_table_html(
-            table_change_reset,
-            color_map=dataset_year1_rainbows,  # use year1 colors for header
-            pretty_map={**{'index': f'{location1_name} Metrics'}, **pretty}  # include first column in pretty map
+            table_df_reset,
+            color_map=dataset_year1_rainbows,  # use year1 colors for metric headers
+            pretty_map={**{f'{location1_name}': f'{location1_name}'}, **pretty}  # include first column in pretty map
         )
+
         plot_year_comparison_with_arrows(y1_values, y2_values, baseline_year, other_year, metrics, location1_name)
 
 st.divider()

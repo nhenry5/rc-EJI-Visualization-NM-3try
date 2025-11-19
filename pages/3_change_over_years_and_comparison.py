@@ -352,6 +352,7 @@ if selected_parameter=="County":
     selected_county = st.selectbox("Select a New Mexico County:", counties)
     subset1 = county_df1[county_df1["County"]==selected_county]
     subset2 = county_df2[county_df2["County"]==selected_county]
+    st.caption("Note: If a state or county does not appear in the dropdown, it means the CDC dataset for the selected year did not include data for that location.")
     if subset1.empty or subset2.empty:
         st.warning(f"No data for {selected_county} in one of the years")
     else:

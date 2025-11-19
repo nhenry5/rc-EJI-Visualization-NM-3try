@@ -1,8 +1,8 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+from scipy import stats
 
 # ------------------------------
 # Page Config
@@ -70,10 +70,13 @@ def load_data_for_year(year: str):
     # default paths (must exist in your repo)
     state_path = f"{base}/{year}/clean/{year}EJI_StateAverages_RPL.csv"
     county_path = f"{base}/{year}/clean/{year}EJI_NewMexico_CountyMeans.csv"
-
+    tract_path = f"{base}/{year}/raw/{year}EJI_NM_TRACTS.csv"
+    
     state_df = pd.read_csv(state_path)
     county_df = pd.read_csv(county_path)
-    return state_df, county_df
+    tract_df = pd.read_csv(tract_path)
+    
+    return state_df, county_df, tract_df
 
 # ------------------------------
 # Normalize column names (rename mean_* to RPL_*)

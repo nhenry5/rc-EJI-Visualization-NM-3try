@@ -1,8 +1,8 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from scipy import stats 
 
 # ------------------------------
 # Page Config
@@ -381,25 +381,7 @@ def plot_comparison(data1, data2, label1, label2):
 
     st.plotly_chart(fig, width='stretch')
     st.caption("_Note: darker bars represent the first dataset; lighter bars represent the second dataset._")
-# ------------------------------
-# Analysis Functions
-# ------------------------------
-def run_test(df, group_column, target_column, threshold=0.75):
-    """Classifies tracts based on the Socioeconomic Vulnerability and performs T-test."""
-    df['Is_Low_Income_Tract'] = np.where(
-        df[group_column] >= threshold,
-        'Low-Income (High Burden)',
-        'Other Tracts (Lower Burden)'
-    )
-    low_income_ej = df[df['Is_Low_Income_Tract'] == 'Low-Income (High Burden)'][target_column].dropna()
-    other_ej = df[df['Is_Low_Income_Tract'] == 'Other Tracts (Lower Burden)'][target_column].dropna()
 
-    if low_income_ej.empty or other_ej.empty:
-        return None, None, None, None, df
-
-    t_stat, p_value = stats.ttest_ind(low_income_ej, other_ej, equal_var=False)
-    return low_income_ej.mean(), other_ej.mean(), t_stat, p_value, df
-    
 # ------------------------------
 # Main App Layout
 # ------------------------------
@@ -461,7 +443,7 @@ for m in OPTIONAL_METRICS:
 counties = sorted(county_df["County"].dropna().unique())
 states = sorted(state_df["State"].dropna().unique())
 
-parameter1 = ["New Mexico", "County", "Test"]
+parameter1 = ["New Mexico", "County"]
 
 st.caption("Note: If a state or county does not appear in the dropdown, it means the CDC dataset for the selected year did not include data for that location.")
 
@@ -497,7 +479,7 @@ if selected_parameter == "County":
                     comp_values = comp_row.iloc[0]
                     plot_comparison(county_values, comp_values, selected_county, comp_county)
 
-elif selected_parameter == "New Mexico":
+else:
     nm_row = state_df[state_df["State"].str.strip().str.lower() == "new mexico"]
     if nm_row.empty:
         st.warning("No New Mexico data found.")
@@ -523,38 +505,6 @@ elif selected_parameter == "New Mexico":
                 if not comp_row.empty:
                     comp_values = comp_row.iloc[0]
                     plot_comparison(nm_values, comp_values, "New Mexico", comp_county)
-else:
-    st.header("🔬 Statistical Test: Low-Income vs. Other Tracts")
-    st.markdown("""
-        **Asumption:** Census Tracts with high **Social Vulnerability** (our proxy for low-income, defined as $\ge$ 0.75 percentile rank nationally) will have a significantly higher **Overall EJI score**.
-    """)
 
-    # Run the test
-    mean_low_income, mean_other, t_stat, p_value, _ = run_test(tract_df.copy(), 'RPL_SVM', 'RPL_EJI', 0.75)
-    
-    if mean_low_income is not None:
-        col_mean, col_t = st.columns(2)
-        with col_mean:
-            st.metric(
-                "Mean Overall EJI (Low-Income Tracts)",
-                f"{mean_low_income:.3f}",
-                delta=f"{(mean_low_income - mean_other):.3f} higher than other tracts"
-            )
-            st.metric(
-                "Mean Overall EJI (Other Tracts)",
-                f"{mean_other:.3f}",
-            )
-        with col_t:
-            st.metric("T-Statistic", f"{t_stat:.2f}", help="Measures the magnitude of difference between the groups' means.")
-            st.metric("P-Value", f"{p_value:.4e}", help="P-value < 0.05 indicates the difference is statistically significant.")
-
-            st.write("---")
-            if p_value < 0.05:
-                st.success(f"**Conclusion:** The difference in the EJI scores is **statistically significant** (p < 0.05). This confirms that socially vulnerable communities in NM face disproportionately higher environmental burdens.")
-            else:
-                st.warning(f"**Conclusion:** The difference is not statistically significant (p = {p_value:.4f}).")
-        
-    else:
-        st.error("Cannot run test. Check your Census Tract data file for 'RPL_SVM' and 'RPL_EJI' columns.")
 st.divider()
 st.caption("Data Source: CDC Environmental Justice Index | Visualization by Riley Cochrell")

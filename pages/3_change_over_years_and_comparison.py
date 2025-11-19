@@ -128,11 +128,8 @@ def display_colored_table_html(df, color_map, pretty_map, cell_color_map=None, t
     # ----- Header -----
     header_html = "<tr>"
     for col in df_display.columns:
-        # get original key
-        orig = [k for k,v in pretty_map.items() if v == col]
-        orig_key = orig[0] if orig else col
-
-        # header color from normal map
+        # reverse lookup
+        orig_key = next((k for k, v in pretty_map.items() if v == col), col)
         color = color_map.get(orig_key, "#FFFFFF")
         text_color = get_contrast_color(color)
 
@@ -146,37 +143,38 @@ def display_colored_table_html(df, color_map, pretty_map, cell_color_map=None, t
     body_html = ""
     for r_idx, row in df_display.iterrows():
         body_html += "<tr>"
-        for c_idx, (col, val) in enumerate(row.items()):
-            # per-cell color override (if provided)
-            cell_color = None
+        for col, val in row.items():
+
+            # Per-cell background override
             if cell_color_map and r_idx in cell_color_map and col in cell_color_map[r_idx]:
-                cell_color = cell_color_map[r_idx][col]
+                bg = cell_color_map[r_idx][col]
+            else:
+                bg = "#FFFFFF"
 
-            bg = cell_color if cell_color else "#FFFFFF"
-
-                        # Format cell text with + sign and arrow
-            cell_text = (
-                if pd.isna(val):
-                    cell_text = "No Data"
+            # -------- Cell value formatting --------
+            if pd.isna(val):
+                cell_text = "No Data"
+            else:
+                sign_val = f"{val:+.3f}"  # + or -
+                if val > 0:
+                    arrow = "↑"
+                elif val < 0:
+                    arrow = "↓"
                 else:
-                    sign_val = f"{val:+.3f}"  # + for positive, - for negative
-    
-                    if val > 0:
-                        arrow = "↑"
-                    elif val < 0:
-                        arrow = "↓"
-                    else:
-                        arrow = ""
-    
-                    cell_text = f"{sign_val} {arrow}".strip()
+                    arrow = ""
+                cell_text = f"{sign_val} {arrow}".strip()
 
             body_html += (
                 f"<td style='text-align:center;padding:4px;border:1px solid #ccc;"
                 f"background-color:{bg};'>{cell_text}</td>"
             )
+
         body_html += "</tr>"
 
-    table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
+    table_html = (
+        "<table style='border-collapse:collapse;width:100%;border:1px solid black;'>"
+        f"{header_html}{body_html}</table>"
+    )
     st.markdown(table_html, unsafe_allow_html=True)
 
 

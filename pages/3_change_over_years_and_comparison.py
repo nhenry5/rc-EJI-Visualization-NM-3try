@@ -493,8 +493,8 @@ else:
             cell_color_map=cell_colors,
             apply_change_formatting=True
         )
-st.info("🔴 Rows highlighted in red represent areas with **Increased Concern/Burden (ΔEJI > 0)**.")
-st.info("🟢 Rows highlighted in green represent areas with **Decreased Concern/Burden (ΔEJI ≤ 0)**.")
+st.info("🔴 Cells highlighted in red represent areas with **Increased Concern/Burden (ΔEJI > 0)**.")
+st.info("🟢 Cells highlighted in green represent areas with **Decreased Concern/Burden (ΔEJI ≤ 0)**.")
 
 
 st.divider()

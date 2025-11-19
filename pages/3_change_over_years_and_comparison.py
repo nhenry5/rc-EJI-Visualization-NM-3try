@@ -116,7 +116,7 @@ def get_contrast_color(hex_color):
 def get_theme_color():
     return "black"
     
-def display_colored_table_html(df, color_map, pretty_map, cell_color_map=None, title=None):
+def display_colored_table_html(df, color_map, pretty_map, cell_color_map=None, title=None, apply_change_formatting=False):
     if isinstance(df, pd.Series):
         df = df.to_frame().T
 
@@ -154,24 +154,24 @@ def display_colored_table_html(df, color_map, pretty_map, cell_color_map=None, t
             # -------- Cell value formatting --------
             if pd.isna(val):
                 cell_text = "No Data"
-            
-            elif isinstance(val, (int, float, np.number)):
-                # Numeric: format +0.123 and arrow
+
+            elif apply_change_formatting and isinstance(val, (int, float, np.number)):
+                # ONLY used in change table
                 sign_val = f"{val:+.3f}"
-            
                 if val > 0:
                     arrow = "↑"
                 elif val < 0:
                     arrow = "↓"
                 else:
                     arrow = "→"
-            
                 cell_text = f"{sign_val} {arrow}"
-            
-            else:
-                # Non-numeric, fallback
-                cell_text = str(val)
 
+            else:
+                # Standard table formatting
+                if isinstance(val, (int, float, np.number)):
+                    cell_text = f"{val:.3f}"
+                else:
+                    cell_text = str(val)
 
             body_html += (
                 f"<td style='text-align:center;padding:4px;border:1px solid #ccc;"
@@ -415,10 +415,12 @@ if selected_parameter=="County":
         # Call updated table renderer
         display_colored_table_html(
             change_df_pretty,
-            color_map=change_header_colors,     # rainbow headers
-            pretty_map=change_pretty,           # pretty labels
-            cell_color_map=cell_colors          # the DELTA box colors
+            color_map=change_header_colors,
+            pretty_map=change_pretty,
+            cell_color_map=cell_colors,
+            apply_change_formatting=True
         )
+
 
 
 else:
@@ -486,10 +488,12 @@ else:
         # Call updated table renderer
         display_colored_table_html(
             change_df_pretty,
-            color_map=change_header_colors,     # rainbow headers
-            pretty_map=change_pretty,           # pretty labels
-            cell_color_map=cell_colors          # the DELTA box colors
+            color_map=change_header_colors,
+            pretty_map=change_pretty,
+            cell_color_map=cell_colors,
+            apply_change_formatting=True
         )
+
 
 st.divider()
 st.caption("Data Source: CDC Environmental Justice Index | Visualization by Riley Cochrell")

@@ -104,56 +104,58 @@ dataset_year2_rainbows = {
 # ------------------------------
 # Helper Functions
 # ------------------------------
-def get_contrast_color(hex_color):
-    try:
-        rgb = tuple(int(hex_color.strip("#")[i:i+2],16) for i in (0,2,4))
-    except:
-        return "black"
-    brightness = 0.299*rgb[0] + 0.587*rgb[1] + 0.114*rgb[2]
-    return "black" if brightness>150 else "white"
+def display_colored_table_html(df, color_map, pretty_map, cell_color_map=None, title=None):
+    if isinstance(df, pd.Series):
+        df = df.to_frame().T
 
-def get_theme_color():
-    return "black"
-
-def display_colored_table_html(df, color_map, pretty_map, title=None):
-    # Rename columns using pretty labels
     df_display = df.rename(columns=pretty_map)
 
     if title:
         st.markdown(f"### {title}")
 
-    # ---- HEADER ----
+    # ----- Header -----
     header_html = "<tr>"
-    for orig_col in df.columns:
-        pretty_col = pretty_map.get(orig_col, orig_col)
-        bg = color_map.get(orig_col, "#FFFFFF")
-        text_color = get_contrast_color(bg)
+    for col in df_display.columns:
+        # get original key
+        orig = [k for k,v in pretty_map.items() if v == col]
+        orig_key = orig[0] if orig else col
+
+        # header color from normal map
+        color = color_map.get(orig_key, "#FFFFFF")
+        text_color = get_contrast_color(color)
 
         header_html += (
-            f'<th style="background-color:{bg};'
-            f'color:{text_color};padding:6px;text-align:center;">'
-            f'{pretty_col}</th>'
+            f'<th style="background-color:{color};color:{text_color};'
+            f'padding:6px;text-align:center;">{col}</th>'
         )
     header_html += "</tr>"
 
-    # ---- BODY ----
+    # ----- Body -----
     body_html = ""
-    for _, row in df.iterrows():
+    for r_idx, row in df_display.iterrows():
         body_html += "<tr>"
-        for val in row:
-            cell = "No Data" if pd.isna(val) else (f"{val:.3f}" if isinstance(val, float) else val)
+        for c_idx, (col, val) in enumerate(row.items()):
+            # per-cell color override (if provided)
+            cell_color = None
+            if cell_color_map and r_idx in cell_color_map and col in cell_color_map[r_idx]:
+                cell_color = cell_color_map[r_idx][col]
+
+            bg = cell_color if cell_color else "#FFFFFF"
+
+            cell_text = (
+                "No Data" if pd.isna(val)
+                else (f"{val:.3f}" if isinstance(val, float) else val)
+            )
+
             body_html += (
-                "<td style='text-align:center;padding:4px;border:1px solid #ccc'>"
-                f"{cell}</td>"
+                f"<td style='text-align:center;padding:4px;border:1px solid #ccc;"
+                f"background-color:{bg};'>{cell_text}</td>"
             )
         body_html += "</tr>"
 
-    table_html = (
-        "<table style='border-collapse:collapse;width:100%;border:1px solid black;'>"
-        f"{header_html}{body_html}</table>"
-    )
-
+    table_html = f"<table style='border-collapse:collapse;width:100%;border:1px solid black;'>{header_html}{body_html}</table>"
     st.markdown(table_html, unsafe_allow_html=True)
+
 
 # ------------------------------
 # Beautiful, functional arrows (fixed)
@@ -358,20 +360,36 @@ if selected_parameter=="County":
         
         change_df = pd.DataFrame(
             data=[[change_values[m] for m in metrics]],
-            columns=[f"Δ {pretty[m]}" for m in metrics]
+            columns=metrics
         )
         
         st.markdown(f"### Change from {baseline_year} to {other_year}")
         
-        # Build pretty + color maps for change table
-        change_color_map = {f"Δ {pretty[m]}": ("#ffcccc" if change_values[m] > 0 else "#ccffcc") for m in metrics}
-        change_pretty_map = {f"Δ {pretty[m]}": f"Δ {pretty[m]}" for m in metrics}
+        # Column headers = rainbow colors (dataset_year1)
+        change_header_colors = {m: dataset_year1_rainbows[m] for m in metrics}
         
+        # Pretty names
+        change_pretty = {m: f"Δ {pretty[m]}" for m in metrics}
+        
+        # Cell background colors (increase = red, decrease = green)
+        cell_colors = {
+            0: {  # row index 0
+                f"Δ {pretty[m]}": ("#ffcccc" if change_values[m] > 0 else "#ccffcc")
+                for m in metrics
+            }
+        }
+        
+        # Build a df with pretty column names
+        change_df_pretty = change_df.rename(columns=change_pretty)
+        
+        # Call updated table renderer
         display_colored_table_html(
-            change_df,
-            color_map=change_color_map,
-            pretty_map=change_pretty_map
+            change_df_pretty,
+            color_map=change_header_colors,     # rainbow headers
+            pretty_map=change_pretty,           # pretty labels
+            cell_color_map=cell_colors          # the DELTA box colors
         )
+
 
 else:
     nm_row1 = state_df1[state_df1["State"].str.strip().str.lower()=="new mexico"]
@@ -408,25 +426,40 @@ else:
         )
 
         plot_year_comparison_with_arrows(y1_values, y2_values, baseline_year, other_year, metrics, location1_name)
-        # ---------------- Change Table ----------------
+       # ---------------- Change Table ----------------
         change_values = compute_change_row(y1_values, y2_values, metrics)
         
         change_df = pd.DataFrame(
             data=[[change_values[m] for m in metrics]],
-            columns=[f"Δ {pretty[m]}" for m in metrics]
+            columns=metrics
         )
         
         st.markdown(f"### Change from {baseline_year} to {other_year}")
         
-        # Build pretty + color maps for change table
-        change_color_map = {f"Δ {pretty[m]}": ("#ffcccc" if change_values[m] > 0 else "#ccffcc") for m in metrics}
-        change_pretty_map = {f"Δ {pretty[m]}": f"Δ {pretty[m]}" for m in metrics}
+        # Column headers = rainbow colors (dataset_year1)
+        change_header_colors = {m: dataset_year1_rainbows[m] for m in metrics}
         
+        # Pretty names
+        change_pretty = {m: f"Δ {pretty[m]}" for m in metrics}
+        
+        # Cell background colors (increase = red, decrease = green)
+        cell_colors = {
+            0: {  # row index 0
+                f"Δ {pretty[m]}": ("#ffcccc" if change_values[m] > 0 else "#ccffcc")
+                for m in metrics
+            }
+        }
+        
+        # Build a df with pretty column names
+        change_df_pretty = change_df.rename(columns=change_pretty)
+        
+        # Call updated table renderer
         display_colored_table_html(
-            change_df,
-            color_map=change_color_map,
-            pretty_map=change_pretty_map
-        )  
+            change_df_pretty,
+            color_map=change_header_colors,     # rainbow headers
+            pretty_map=change_pretty,           # pretty labels
+            cell_color_map=cell_colors          # the DELTA box colors
+        )
 
 st.divider()
 st.caption("Data Source: CDC Environmental Justice Index | Visualization by Riley Cochrell")

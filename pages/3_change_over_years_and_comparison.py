@@ -394,7 +394,7 @@ if selected_parameter=="County":
             columns=metrics
         )
         
-        st.subheader(f"Change in EJI Scores for {location1_name} from {baseline_year} to {other_year}")
+        st.subheader(f"⚖️ Change in EJI Scores for {location1_name} from {baseline_year} to {other_year}")
         
         # Column headers = rainbow colors (dataset_year1)
         change_header_colors = {m: dataset_year1_rainbows[m] for m in metrics}
@@ -468,7 +468,7 @@ else:
             columns=metrics
         )
         
-        st.subheader(f"Change in EJI Scores for {location1_name} from {baseline_year} to {other_year}")
+        st.subheader(f"⚖️ Change in EJI Scores for {location1_name} from {baseline_year} to {other_year}")
         
         # Column headers = rainbow colors (dataset_year1)
         change_header_colors = {m: dataset_year1_rainbows[m] for m in metrics}

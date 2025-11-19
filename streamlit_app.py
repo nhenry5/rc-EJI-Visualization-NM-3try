@@ -396,6 +396,7 @@ def plot_comparison(data1, data2, label1, label2):
     
 def run_test(df, group_column, target_column, threshold=0.75):
     """Classifies tracts based on the Socioeconomic Vulnerability and performs T-test."""
+    df = df[df[target_column] >= 0]
     df['Is_Low_Income_Tract'] = np.where(
         df[group_column] >= threshold,
         'Low-Income (High Burden)',

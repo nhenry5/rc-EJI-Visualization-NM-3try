@@ -525,7 +525,7 @@ elif selected_parameter == "New Mexico":
                     comp_values = comp_row.iloc[0]
                     plot_comparison(nm_values, comp_values, "New Mexico", comp_county)
 else:
-    st.header("🔬 Statistical Test: Low-Income vs. Other Tracts")
+    st.subheader("🔬 Statistical Test: Low-Income vs. Other Tracts")
     st.markdown("""
         **Assumption:** Census Tracts with high **Social Vulnerability**
         (proxy for low-income, defined as ≥ 0.75 nationally) will have
@@ -559,7 +559,7 @@ else:
 
         st.write("---")
         if p_value < 0.05:
-            st.success("The difference **is statistically significant** (p < 0.05).")
+            st.success("The difference **is statistically significant** (p < 0.05). This confirms that socially vulnerable communities in NM face disproportionately higher environmental burdens.")
         else:
             st.warning(f"The difference is **not** statistically significant (p = {p_value:.4f}).")
 

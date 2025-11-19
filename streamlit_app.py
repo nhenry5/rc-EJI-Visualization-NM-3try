@@ -381,6 +381,22 @@ def plot_comparison(data1, data2, label1, label2):
 
     st.plotly_chart(fig, width='stretch')
     st.caption("_Note: darker bars represent the first dataset; lighter bars represent the second dataset._")
+def run_test(df, group_column, target_column, threshold=0.75):
+    """Classifies tracts based on the Socioeconomic Vulnerability and performs T-test."""
+    df['Is_Low_Income_Tract'] = np.where(
+        df[group_column] >= threshold,
+        'Low-Income (High Burden)',
+        'Other Tracts (Lower Burden)'
+    )
+
+    low_income_ej = df[df['Is_Low_Income_Tract'] == 'Low-Income (High Burden)'][target_column].dropna()
+    other_ej = df[df['Is_Low_Income_Tract'] == 'Other Tracts (Lower Burden)'][target_column].dropna()
+
+    if low_income_ej.empty or other_ej.empty:
+        return None, None, None, None, df
+
+    t_stat, p_value = stats.ttest_ind(low_income_ej, other_ej, equal_var=False)
+    return low_income_ej.mean(), other_ej.mean(), t_stat, p_value, df
 
 # ------------------------------
 # Main App Layout
@@ -443,11 +459,52 @@ for m in OPTIONAL_METRICS:
 counties = sorted(county_df["County"].dropna().unique())
 states = sorted(state_df["State"].dropna().unique())
 
-parameter1 = ["New Mexico", "County"]
+parameter1 = ["New Mexico", "County", "Test"]
 
 st.caption("Note: If a state or county does not appear in the dropdown, it means the CDC dataset for the selected year did not include data for that location.")
 
 selected_parameter = st.selectbox("View EJI data for:", parameter1)
+if selected_parameter == "Test":
+    st.header("🔬 Statistical Test: Low-Income vs. Other Tracts")
+    st.markdown("""
+        **Assumption:** Census Tracts with high **Social Vulnerability**
+        (proxy for low-income, defined as ≥ 0.75 nationally) will have
+        significantly higher **Overall EJI scores**.
+    """)
+
+    mean_low_income, mean_other, t_stat, p_value, _ = run_test(
+        tract_df.copy(),
+        'RPL_SVM',
+        'RPL_EJI',
+        0.75
+    )
+
+    if mean_low_income is not None:
+        col_mean, col_t = st.columns(2)
+
+        with col_mean:
+            st.metric(
+                "Mean Overall EJI (Low-Income Tracts)",
+                f"{mean_low_income:.3f}",
+                delta=f"{(mean_low_income - mean_other):.3f} higher than other tracts"
+            )
+            st.metric(
+                "Mean Overall EJI (Other Tracts)",
+                f"{mean_other:.3f}"
+            )
+
+        with col_t:
+            st.metric("T-Statistic", f"{t_stat:.2f}")
+            st.metric("P-Value", f"{p_value:.4e}")
+
+        st.write("---")
+        if p_value < 0.05:
+            st.success("The difference **is statistically significant** (p < 0.05).")
+        else:
+            st.warning(f"The difference is **not** statistically significant (p = {p_value:.4f}).")
+
+    else:
+        st.error("Cannot run test. Missing values in required columns.")
 
 if selected_parameter == "County":
     selected_county = st.selectbox("Select a New Mexico County:", counties)

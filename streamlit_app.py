@@ -479,7 +479,7 @@ if selected_parameter == "County":
                     comp_values = comp_row.iloc[0]
                     plot_comparison(county_values, comp_values, selected_county, comp_county)
 
-elif
+elif selected_parameter == "New Mexico":
     nm_row = state_df[state_df["State"].str.strip().str.lower() == "new mexico"]
     if nm_row.empty:
         st.warning("No New Mexico data found.")
@@ -505,7 +505,7 @@ elif
                 if not comp_row.empty:
                     comp_values = comp_row.iloc[0]
                     plot_comparison(nm_values, comp_values, "New Mexico", comp_county)
-else selected_parameter == "Test":
+else:
     st.header("🔬 Statistical Test: Low-Income vs. Other Tracts")
     st.markdown("""
         **Asumption:** Census Tracts with high **Social Vulnerability** (our proxy for low-income, defined as $\ge$ 0.75 percentile rank nationally) will have a significantly higher **Overall EJI score**.

@@ -370,7 +370,7 @@ if selected_parameter=="County":
             columns=[location1_name] + metrics
         )
         
-        st.markdown(f"### {location1_name} – Year Comparison Table")
+        st.markdown(f"### ⚖️ {location1_name} – Year Comparison Table")
         
         # Build a color map including first column (default white)
         full_color_map = {location1_name: "#FFFFFF"}  # first column

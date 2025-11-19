@@ -67,7 +67,7 @@ def load_data_for_year(year: str):
     """Load the state and county CSVs for the given year.
        NOTE: GitHub repo path updated from ...-2try -> ...-3try per your request.
     """
-    base = "https://github.com/rileycochrell/rc-EJI-Visualization-NM-3try/raw/refs/heads/main/data"
+    base = "https://github.com/nhenry5/rc-EJI-Visualization-NM-3try/raw/refs/heads/main/data"
     # default paths (must exist in your repo)
     state_path = f"{base}/{year}/clean/{year}EJI_StateAverages_RPL.csv"
     county_path = f"{base}/{year}/clean/{year}EJI_NewMexico_CountyMeans.csv"
@@ -75,7 +75,7 @@ def load_data_for_year(year: str):
     
     state_df = pd.read_csv(state_path)
     county_df = pd.read_csv(county_path)
-    tract_df = pd.read_csv(tract_path)
+    tract_df = pd.read_csv(tract_path, dtype={'GEOID': str, 'TRACT_FIPS': str})
     
     return state_df, county_df, tract_df
 
@@ -141,6 +141,14 @@ def get_contrast_color(hex_color: str):
 def no_data_label_color():
     return "black"
 
+def normalize_county_names(df):
+    if "County" in df.columns:
+        df["County"] = df["County"].astype(str).str.strip().str.title()
+        df["County"] = df["County"].apply(
+            lambda x: f"{x} County" if not x.lower().endswith("county") else x
+        )
+    return df
+    
 def display_colored_table_html(df, color_map, pretty_map, title=None):
     """Render an HTML table with header cell colors from color_map and data cells.
        Currently highlights entire row if any cell >= 0.76; if you want per-cell highlighting,
@@ -385,6 +393,7 @@ def plot_comparison(data1, data2, label1, label2):
 
     st.plotly_chart(fig, width='stretch')
     st.caption("_Note: darker bars represent the first dataset; lighter bars represent the second dataset._")
+    
 def run_test(df, group_column, target_column, threshold=0.75):
     """Classifies tracts based on the Socioeconomic Vulnerability and performs T-test."""
     df['Is_Low_Income_Tract'] = np.where(
@@ -392,7 +401,6 @@ def run_test(df, group_column, target_column, threshold=0.75):
         'Low-Income (High Burden)',
         'Other Tracts (Lower Burden)'
     )
-
     low_income_ej = df[df['Is_Low_Income_Tract'] == 'Low-Income (High Burden)'][target_column].dropna()
     other_ej = df[df['Is_Low_Income_Tract'] == 'Other Tracts (Lower Burden)'][target_column].dropna()
 
@@ -430,17 +438,6 @@ def normalize_county_names(df):
     return df
 
 # ------------------------------
-# Normalize County Names
-# ------------------------------
-def normalize_county_names(df):
-    if "County" in df.columns:
-        df["County"] = df["County"].astype(str).str.strip().str.title()
-        df["County"] = df["County"].apply(
-            lambda x: f"{x} County" if not x.lower().endswith("county") else x
-        )
-    return df
-
-# ------------------------------
 # Load and normalize data
 # ------------------------------
 try:
@@ -453,6 +450,15 @@ state_df.rename(columns=rename_map, inplace=True)
 county_df.rename(columns=rename_map, inplace=True)
 
 # Normalize county names
+if 'RPL_EJI' not in tract_df.columns:
+    tract_df.rename(columns={
+        "RPL_THEME_EJI": "RPL_EJI",
+        "RPL_THEME_EBM": "RPL_EBM",
+        "RPL_THEME_SVM": "RPL_SVM",
+        "RPL_THEME_HVM": "RPL_HVM",
+        "RPL_THEME_CBM": "RPL_CBM",
+        "RPL_THEME_EJI_CBM": "RPL_EJI_CBM",
+    }, inplace=True)
 county_df = normalize_county_names(county_df)
 
 metrics = BASE_METRICS.copy()
@@ -466,12 +472,10 @@ states = sorted(state_df["State"].dropna().unique())
 parameter1 = ["New Mexico", "County", "Test"]
 
 st.caption("Note: If a state or county does not appear in the dropdown, it means the CDC dataset for the selected year did not include data for that location.")
-
 selected_parameter = st.selectbox("View EJI data for:", parameter1)
 
 if selected_parameter == "County":
     selected_county = st.selectbox("Select a New Mexico County:", counties)
-    st.caption("Note: If a state or county does not appear in the dropdown, it means the CDC dataset for the selected year did not include data for that location.")
     subset = county_df[county_df["County"] == selected_county]
     if subset.empty:
         st.warning(f"No data found for {selected_county}.")
@@ -485,15 +489,12 @@ if selected_parameter == "County":
             compare_type = st.radio("Compare with:", ["State", "County"])
             if compare_type == "State":
                 comp_state = st.selectbox("Select state:", states)
-                st.caption("Note: If a state or county does not appear in the dropdown, it means the CDC dataset for the selected year did not include data for that location.")
-
                 comp_row = state_df[state_df["State"] == comp_state]
                 if not comp_row.empty:
                     comp_values = comp_row.iloc[0]
                     plot_comparison(county_values, comp_values, selected_county, comp_state)
             else:
                 comp_county = st.selectbox("Select county:", [c for c in counties if c != selected_county])
-                st.caption("Note: If a state or county does not appear in the dropdown, it means the CDC dataset for the selected year did not include data for that location.")
                 comp_row = county_df[county_df["County"] == comp_county]
                 if not comp_row.empty:
                     comp_values = comp_row.iloc[0]
@@ -513,14 +514,12 @@ elif selected_parameter == "New Mexico":
             compare_type = st.radio("Compare with:", ["State", "County"])
             if compare_type == "State":
                 comp_state = st.selectbox("Select state:", [s for s in states if s.lower() != "new mexico"])
-                st.caption("Note: If a state or county does not appear in the dropdown, it means the CDC dataset for the selected year did not include data for that location.")
                 comp_row = state_df[state_df["State"] == comp_state]
                 if not comp_row.empty:
                     comp_values = comp_row.iloc[0]
                     plot_comparison(nm_values, comp_values, "New Mexico", comp_state)
             else:
                 comp_county = st.selectbox("Select county:", counties)
-                st.caption("Note: If a state or county does not appear in the dropdown, it means the CDC dataset for the selected year did not include data for that location.")
                 comp_row = county_df[county_df["County"] == comp_county]
                 if not comp_row.empty:
                     comp_values = comp_row.iloc[0]
@@ -542,7 +541,6 @@ else:
 
     if mean_low_income is not None:
         col_mean, col_t = st.columns(2)
-
         with col_mean:
             st.metric(
                 "Mean Overall EJI (Low-Income Tracts)",

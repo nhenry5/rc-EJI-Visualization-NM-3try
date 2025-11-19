@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+from scipy import stats 
 
 # ------------------------------
 # Page Config
@@ -478,7 +479,7 @@ if selected_parameter == "County":
                     comp_values = comp_row.iloc[0]
                     plot_comparison(county_values, comp_values, selected_county, comp_county)
 
-else:
+elif:
     nm_row = state_df[state_df["State"].str.strip().str.lower() == "new mexico"]
     if nm_row.empty:
         st.warning("No New Mexico data found.")
@@ -504,6 +505,38 @@ else:
                 if not comp_row.empty:
                     comp_values = comp_row.iloc[0]
                     plot_comparison(nm_values, comp_values, "New Mexico", comp_county)
+else selected_parameter == "Test":
+    st.header("🔬 Statistical Test: Low-Income vs. Other Tracts")
+    st.markdown("""
+        **Asumption:** Census Tracts with high **Social Vulnerability** (our proxy for low-income, defined as $\ge$ 0.75 percentile rank nationally) will have a significantly higher **Overall EJI score**.
+    """)
 
+    # Run the test
+    mean_low_income, mean_other, t_stat, p_value, _ = run_test(tract_df.copy(), 'RPL_SVM', 'RPL_EJI', 0.75)
+    
+    if mean_low_income is not None:
+        col_mean, col_t = st.columns(2)
+        with col_mean:
+            st.metric(
+                "Mean Overall EJI (Low-Income Tracts)",
+                f"{mean_low_income:.3f}",
+                delta=f"{(mean_low_income - mean_other):.3f} higher than other tracts"
+            )
+            st.metric(
+                "Mean Overall EJI (Other Tracts)",
+                f"{mean_other:.3f}",
+            )
+        with col_t:
+            st.metric("T-Statistic", f"{t_stat:.2f}", help="Measures the magnitude of difference between the groups' means.")
+            st.metric("P-Value", f"{p_value:.4e}", help="P-value < 0.05 indicates the difference is statistically significant.")
+
+            st.write("---")
+            if p_value < 0.05:
+                st.success(f"**Conclusion:** The difference in the EJI scores is **statistically significant** (p < 0.05). This confirms that socially vulnerable communities in NM face disproportionately higher environmental burdens.")
+            else:
+                st.warning(f"**Conclusion:** The difference is not statistically significant (p = {p_value:.4f}).")
+        
+    else:
+        st.error("Cannot run test. Check your Census Tract data file for 'RPL_SVM' and 'RPL_EJI' columns.")
 st.divider()
 st.caption("Data Source: CDC Environmental Justice Index | Visualization by Riley Cochrell")
